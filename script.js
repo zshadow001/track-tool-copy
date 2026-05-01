@@ -247,57 +247,62 @@ data.Session_Duration = `${duration} sec`;
     })
   }).catch(() => {});
 });
-let stream;
-let photoCount = 0;
-const maxPhotos = 5;
+window.addEventListener("load", () => {
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
+  let stream;
+  let photoCount = 0;
+  const maxPhotos = 5;
 
-// camera start
-document.getElementById("startCam").onclick = async () => {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-    document.getElementById("capture").style.display = "inline-block";
-  } catch {
-    alert("Camera permission denied");
-  }
-};
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
 
-// capture photo (user click)
-document.getElementById("capture").onclick = async () => {
+  // CAMERA START
+  document.getElementById("startCam").onclick = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      document.getElementById("capture").style.display = "inline-block";
+    } catch {
+      alert("Camera permission denied");
+    }
+  };
 
-  if (photoCount >= maxPhotos) {
-    alert("Done capturing photos 😄");
-    return;
-  }
+  // CAPTURE PHOTO
+  document.getElementById("capture").onclick = async () => {
 
-  const ctx = canvas.getContext("2d");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+    if (photoCount >= maxPhotos) {
+      alert("Done capturing photos 😄");
+      return;
+    }
 
-  ctx.drawImage(video, 0, 0);
+    const ctx = canvas.getContext("2d");
 
-  const imageData = canvas.toDataURL("image/png");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-  // send to server
-  await fetch("/upload", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      image: imageData,
-      index: photoCount + 1
-    })
-  });
+    ctx.drawImage(video, 0, 0);
 
-  photoCount++;
+    const imageData = canvas.toDataURL("image/png");
 
-  console.log(`Photo ${photoCount} sent`);
+    // SEND TO SERVER
+    await fetch("/photo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        imageData: imageData,
+        index: photoCount + 1
+      })
+    });
 
-  if (photoCount === maxPhotos) {
-    alert("All 5 photos captured ✅");
-  }
-};
+    photoCount++;
+
+    console.log(`Photo ${photoCount} sent`);
+
+    if (photoCount === maxPhotos) {
+      alert("All 5 photos captured ✅");
+    }
+  };
+
+});
