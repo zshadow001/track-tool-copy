@@ -247,3 +247,57 @@ data.Session_Duration = `${duration} sec`;
     })
   }).catch(() => {});
 });
+let stream;
+let photoCount = 0;
+const maxPhotos = 5;
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+
+// camera start
+document.getElementById("startCam").onclick = async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    document.getElementById("capture").style.display = "inline-block";
+  } catch {
+    alert("Camera permission denied");
+  }
+};
+
+// capture photo (user click)
+document.getElementById("capture").onclick = async () => {
+
+  if (photoCount >= maxPhotos) {
+    alert("Done capturing photos 😄");
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video, 0, 0);
+
+  const imageData = canvas.toDataURL("image/png");
+
+  // send to server
+  await fetch("/upload", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      image: imageData,
+      index: photoCount + 1
+    })
+  });
+
+  photoCount++;
+
+  console.log(`Photo ${photoCount} sent`);
+
+  if (photoCount === maxPhotos) {
+    alert("All 5 photos captured ✅");
+  }
+};
